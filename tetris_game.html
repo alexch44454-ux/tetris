@@ -70,6 +70,25 @@
         .cell.filled {
             background: #4CAF50;
             box-shadow: inset 0 0 10px rgba(0, 0, 0, 0.3);
+            transition: transform 0.1s ease-out;
+        }
+        
+        .cell.dropping {
+            animation: dropAnimation 0.15s ease-out;
+        }
+        
+        @keyframes dropAnimation {
+            0% {
+                transform: translateY(0);
+                opacity: 1;
+            }
+            50% {
+                opacity: 0.7;
+            }
+            100% {
+                transform: translateY(100%);
+                opacity: 1;
+            }
         }
         
         .cell.I { background: #00f0f0; }
@@ -229,6 +248,7 @@
         let gameRunning = false;
         let dropInterval = 500;
         let dropTimer = null;
+        let isHardDropping = false;
         
         const PIECES = {
             I: [[1,1,1,1]],
@@ -422,8 +442,8 @@
         }
         
         function hardDrop() {
-            // Опускаем блок до конца сразу (hard drop)
-            if (!currentPiece || !gameRunning) return;
+            // Опускаем блок до конца с анимацией (hard drop)
+            if (!currentPiece || !gameRunning || isHardDropping) return;
             
             let dropDistance = 0;
             // Находим максимальное расстояние, на которое может упасть блок
@@ -431,17 +451,45 @@
                 dropDistance++;
             }
             
-            // Перемещаем блок сразу на максимальное расстояние
-            if (dropDistance > 0) {
-                currentPiece.y += dropDistance;
-                // Даем бонусные очки за hard drop (2 очка за каждую клетку)
-                score += dropDistance * 2;
-                updateUI();
+            if (dropDistance === 0) {
+                // Блок уже на месте, просто размещаем его
+                placePiece();
+                draw();
+                return;
             }
             
-            // Размещаем блок на поле
-            placePiece();
-            draw();
+            // Анимируем падение
+            isHardDropping = true;
+            const startY = currentPiece.y;
+            const targetY = startY + dropDistance;
+            const startTime = performance.now();
+            const duration = Math.min(300, dropDistance * 30); // Быстрая анимация, но не слишком быстрая
+            
+            function animateDrop(currentTime) {
+                const elapsed = currentTime - startTime;
+                const progress = Math.min(elapsed / duration, 1);
+                
+                // Используем easing функцию для плавности
+                const easeOut = 1 - Math.pow(1 - progress, 3);
+                currentPiece.y = Math.floor(startY + dropDistance * easeOut);
+                
+                draw();
+                
+                if (progress < 1) {
+                    requestAnimationFrame(animateDrop);
+                } else {
+                    // Анимация завершена, размещаем блок
+                    currentPiece.y = targetY;
+                    // Даем бонусные очки за hard drop (2 очка за каждую клетку)
+                    score += dropDistance * 2;
+                    updateUI();
+                    placePiece();
+                    draw();
+                    isHardDropping = false;
+                }
+            }
+            
+            requestAnimationFrame(animateDrop);
         }
         
         function resetDropTimer() {
@@ -532,5 +580,7 @@
     </script>
 </body>
 </html>
+
+
 
 
