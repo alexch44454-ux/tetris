@@ -421,6 +421,24 @@
             draw();
         }
         
+        function hardDrop() {
+            // Опускаем блок до конца сразу
+            let dropDistance = 0;
+            while (isValidPosition(currentPiece, 0, dropDistance + 1)) {
+                dropDistance++;
+            }
+            
+            if (dropDistance > 0) {
+                currentPiece.y += dropDistance;
+                // Даем бонус за hard drop
+                score += dropDistance * 2;
+                updateUI();
+            }
+            
+            placePiece();
+            draw();
+        }
+        
         function resetDropTimer() {
             if (dropTimer) clearInterval(dropTimer);
             dropTimer = setInterval(drop, dropInterval);
@@ -475,7 +493,7 @@
         });
         
         document.getElementById('downBtn').addEventListener('click', () => {
-            if (gameRunning) drop();
+            if (gameRunning) hardDrop();
         });
         
         document.getElementById('rotateBtn').addEventListener('click', () => {
@@ -494,7 +512,7 @@
                     movePiece(1, 0);
                     break;
                 case 'ArrowDown':
-                    drop();
+                    hardDrop();
                     break;
                 case 'ArrowUp':
                 case ' ':
@@ -509,4 +527,5 @@
     </script>
 </body>
 </html>
+
 
