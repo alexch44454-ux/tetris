@@ -213,7 +213,16 @@
         
         .preview-cell.filled {
             border-radius: 2px;
+            box-shadow: inset 0 0 5px rgba(0, 0, 0, 0.3);
         }
+        
+        .preview-cell.I { background: #00f0f0; }
+        .preview-cell.O { background: #f0f000; }
+        .preview-cell.T { background: #a000f0; }
+        .preview-cell.S { background: #00f000; }
+        .preview-cell.Z { background: #f00000; }
+        .preview-cell.J { background: #0000f0; }
+        .preview-cell.L { background: #f0a000; }
         
         @media (max-width: 480px) {
             .game-header {
@@ -246,7 +255,7 @@
         
         <div class="game-board" id="board"></div>
         
-        <div class="next-pieces">
+        <div class="next-pieces" id="nextPiecesContainer">
             <div class="next-piece-container">
                 <div class="next-piece-label">Следующая</div>
                 <div class="next-piece-preview" id="nextPiece1"></div>
@@ -374,7 +383,10 @@
             // Отрисовываем следующие 3 фигуры
             for (let i = 0; i < 3; i++) {
                 const preview = document.getElementById(`nextPiece${i + 1}`);
-                if (!preview) continue;
+                if (!preview) {
+                    console.error(`Элемент nextPiece${i + 1} не найден`);
+                    continue;
+                }
                 
                 preview.innerHTML = '';
                 
@@ -390,6 +402,12 @@
                 if (nextPieces[i]) {
                     const piece = nextPieces[i];
                     const shape = piece.shape;
+                    
+                    if (!shape || shape.length === 0) {
+                        console.error(`Фигура ${i} не имеет формы`);
+                        continue;
+                    }
+                    
                     const offsetX = Math.floor((4 - shape[0].length) / 2);
                     const offsetY = Math.floor((4 - shape.length) / 2);
                     
