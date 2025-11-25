@@ -173,6 +173,48 @@
             color: #666;
         }
         
+        .next-pieces {
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+            width: 100%;
+            margin-top: 10px;
+        }
+        
+        .next-piece-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 5px;
+        }
+        
+        .next-piece-label {
+            color: white;
+            font-size: 12px;
+            font-weight: bold;
+        }
+        
+        .next-piece-preview {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            grid-template-rows: repeat(4, 1fr);
+            gap: 2px;
+            background: rgba(0, 0, 0, 0.2);
+            padding: 5px;
+            border-radius: 5px;
+            width: 60px;
+            height: 60px;
+        }
+        
+        .preview-cell {
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 2px;
+        }
+        
+        .preview-cell.filled {
+            border-radius: 2px;
+        }
+        
         @media (max-width: 480px) {
             .game-header {
                 font-size: 14px;
@@ -203,6 +245,21 @@
         </div>
         
         <div class="game-board" id="board"></div>
+        
+        <div class="next-pieces">
+            <div class="next-piece-container">
+                <div class="next-piece-label">Следующая</div>
+                <div class="next-piece-preview" id="nextPiece1"></div>
+            </div>
+            <div class="next-piece-container">
+                <div class="next-piece-label">Через 1</div>
+                <div class="next-piece-preview" id="nextPiece2"></div>
+            </div>
+            <div class="next-piece-container">
+                <div class="next-piece-label">Через 2</div>
+                <div class="next-piece-preview" id="nextPiece3"></div>
+            </div>
+        </div>
         
         <div class="controls">
             <div class="control-row">
@@ -242,6 +299,7 @@
         
         let gameBoard = Array(BOARD_HEIGHT).fill().map(() => Array(BOARD_WIDTH).fill(0));
         let currentPiece = null;
+        let nextPieces = []; // Очередь следующих фигур
         let score = 0;
         let lines = 0;
         let level = 1;
@@ -294,6 +352,62 @@
             };
         }
         
+        function initNextPieces() {
+            // Создаем очередь из 3 следующих фигур
+            nextPieces = [];
+            for (let i = 0; i < 3; i++) {
+                nextPieces.push(getRandomPiece());
+            }
+            drawNextPieces();
+        }
+        
+        function getNextPiece() {
+            // Берем первую фигуру из очереди
+            const piece = nextPieces.shift();
+            // Добавляем новую фигуру в конец очереди
+            nextPieces.push(getRandomPiece());
+            drawNextPieces();
+            return piece;
+        }
+        
+        function drawNextPieces() {
+            // Отрисовываем следующие 3 фигуры
+            for (let i = 0; i < 3; i++) {
+                const preview = document.getElementById(`nextPiece${i + 1}`);
+                if (!preview) continue;
+                
+                preview.innerHTML = '';
+                
+                // Создаем сетку 4x4 для превью
+                for (let y = 0; y < 4; y++) {
+                    for (let x = 0; x < 4; x++) {
+                        const cell = document.createElement('div');
+                        cell.className = 'preview-cell';
+                        preview.appendChild(cell);
+                    }
+                }
+                
+                if (nextPieces[i]) {
+                    const piece = nextPieces[i];
+                    const shape = piece.shape;
+                    const offsetX = Math.floor((4 - shape[0].length) / 2);
+                    const offsetY = Math.floor((4 - shape.length) / 2);
+                    
+                    for (let y = 0; y < shape.length; y++) {
+                        for (let x = 0; x < shape[y].length; x++) {
+                            if (shape[y][x]) {
+                                const cellIndex = (offsetY + y) * 4 + (offsetX + x);
+                                const cell = preview.children[cellIndex];
+                                if (cell) {
+                                    cell.className = `preview-cell filled ${piece.type}`;
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        
         function rotatePiece(piece) {
             const rows = piece.shape.length;
             const cols = piece.shape[0].length;
@@ -344,7 +458,7 @@
             }
             
             clearLines();
-            currentPiece = getRandomPiece();
+            currentPiece = getNextPiece();
             
             if (!isValidPosition(currentPiece)) {
                 endGame();
@@ -499,7 +613,8 @@
         
         function startGame() {
             gameBoard = Array(BOARD_HEIGHT).fill().map(() => Array(BOARD_WIDTH).fill(0));
-            currentPiece = getRandomPiece();
+            initNextPieces(); // Инициализируем очередь следующих фигур
+            currentPiece = getNextPiece(); // Берем первую фигуру из очереди
             score = 0;
             lines = 0;
             level = 1;
@@ -580,6 +695,7 @@
     </script>
 </body>
 </html>
+
 
 
 
