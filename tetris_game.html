@@ -422,19 +422,24 @@
         }
         
         function hardDrop() {
-            // Опускаем блок до конца сразу
+            // Опускаем блок до конца сразу (hard drop)
+            if (!currentPiece || !gameRunning) return;
+            
             let dropDistance = 0;
+            // Находим максимальное расстояние, на которое может упасть блок
             while (isValidPosition(currentPiece, 0, dropDistance + 1)) {
                 dropDistance++;
             }
             
+            // Перемещаем блок сразу на максимальное расстояние
             if (dropDistance > 0) {
                 currentPiece.y += dropDistance;
-                // Даем бонус за hard drop
+                // Даем бонусные очки за hard drop (2 очка за каждую клетку)
                 score += dropDistance * 2;
                 updateUI();
             }
             
+            // Размещаем блок на поле
             placePiece();
             draw();
         }
