@@ -252,7 +252,6 @@
             <div class="score-panel">
                 <div>Уровень: <span id="level">1</span></div>
                 <div>Следующая</div>
-                <button id="leaderboardBtn" style="margin-top: 5px; padding: 5px 10px; background: rgba(255,255,255,0.3); border: none; border-radius: 5px; color: white; font-size: 12px; cursor: pointer;">🏆 Топ</button>
             </div>
         </div>
         
@@ -321,17 +320,6 @@
             }
         }
         
-        function requestLeaderboard() {
-            if (tg?.sendData) {
-                tg.sendData(JSON.stringify({
-                    action: 'get_leaderboard'
-                }));
-            }
-        }
-        
-        if (leaderboardBtn) {
-            leaderboardBtn.addEventListener('click', requestLeaderboard);
-        }
         
         const BOARD_WIDTH = 10;
         const BOARD_HEIGHT = 15;
@@ -340,7 +328,6 @@
         const linesEl = document.getElementById('lines');
         const levelEl = document.getElementById('level');
         const bestScoreEl = document.getElementById('bestScore');
-        const leaderboardBtn = document.getElementById('leaderboardBtn');
         
         let gameBoard = Array(BOARD_HEIGHT).fill().map(() => Array(BOARD_WIDTH).fill(0));
         let bestScore = 0;
