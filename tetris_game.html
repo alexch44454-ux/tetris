@@ -246,10 +246,12 @@
             <div class="score-panel">
                 <div>Очки: <span id="score">0</span></div>
                 <div>Линии: <span id="lines">0</span></div>
+                <div style="margin-top: 5px; font-size: 14px; opacity: 0.9;">🏆 Рекорд: <span id="bestScore">0</span></div>
             </div>
             <div class="score-panel">
                 <div>Уровень: <span id="level">1</span></div>
                 <div>Следующая</div>
+                <button id="leaderboardBtn" style="margin-top: 5px; padding: 5px 10px; background: rgba(255,255,255,0.3); border: none; border-radius: 5px; color: white; font-size: 12px; cursor: pointer;">🏆 Топ</button>
             </div>
         </div>
         
@@ -297,6 +299,37 @@
         if (tg) {
             tg.ready();
             tg.expand();
+            
+            // Получаем рекорд из URL параметров (если есть)
+            const urlParams = new URLSearchParams(window.location.search);
+            const bestScoreParam = urlParams.get('bestScore');
+            if (bestScoreParam) {
+                bestScore = parseInt(bestScoreParam) || 0;
+                bestScoreEl.textContent = bestScore;
+            } else {
+                // Запрашиваем личный рекорд при загрузке
+                requestBestScore();
+            }
+        }
+        
+        function requestBestScore() {
+            if (tg?.sendData) {
+                tg.sendData(JSON.stringify({
+                    action: 'get_best_score'
+                }));
+            }
+        }
+        
+        function requestLeaderboard() {
+            if (tg?.sendData) {
+                tg.sendData(JSON.stringify({
+                    action: 'get_leaderboard'
+                }));
+            }
+        }
+        
+        if (leaderboardBtn) {
+            leaderboardBtn.addEventListener('click', requestLeaderboard);
         }
         
         const BOARD_WIDTH = 10;
@@ -305,8 +338,11 @@
         const scoreEl = document.getElementById('score');
         const linesEl = document.getElementById('lines');
         const levelEl = document.getElementById('level');
+        const bestScoreEl = document.getElementById('bestScore');
+        const leaderboardBtn = document.getElementById('leaderboardBtn');
         
         let gameBoard = Array(BOARD_HEIGHT).fill().map(() => Array(BOARD_WIDTH).fill(0));
+        let bestScore = 0;
         let currentPiece = null;
         let nextPieces = []; // Очередь следующих фигур
         let score = 0;
@@ -653,7 +689,13 @@
             document.getElementById('finalLevel').textContent = level;
             document.getElementById('gameOver').classList.add('show');
             
-            // Send score to bot
+            // Обновляем рекорд если новый счет больше
+            if (score > bestScore) {
+                bestScore = score;
+                bestScoreEl.textContent = bestScore;
+            }
+            
+            // Send score to bot (бот сам проверит, является ли это новым рекордом)
             if (tg?.sendData) {
                 tg.sendData(JSON.stringify({
                     action: 'save_score',
