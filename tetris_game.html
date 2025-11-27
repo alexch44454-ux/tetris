@@ -163,6 +163,81 @@
             width: 90%;
         }
         
+        .pre-game-menu {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.9);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 2000;
+        }
+        
+        .pre-game-menu.hidden {
+            display: none;
+        }
+        
+        .pre-game-content {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            padding: 40px;
+            border-radius: 20px;
+            text-align: center;
+            max-width: 350px;
+            width: 90%;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+        }
+        
+        .pre-game-content h1 {
+            color: white;
+            font-size: 32px;
+            margin-bottom: 20px;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
+        }
+        
+        .pre-game-content .record-display {
+            background: rgba(255, 255, 255, 0.2);
+            padding: 20px;
+            border-radius: 15px;
+            margin: 20px 0;
+            backdrop-filter: blur(10px);
+        }
+        
+        .pre-game-content .record-label {
+            color: rgba(255, 255, 255, 0.9);
+            font-size: 16px;
+            margin-bottom: 10px;
+        }
+        
+        .pre-game-content .record-value {
+            color: white;
+            font-size: 36px;
+            font-weight: bold;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
+        }
+        
+        .pre-game-content .play-button {
+            background: rgba(255, 255, 255, 0.9);
+            color: #667eea;
+            border: none;
+            padding: 18px 40px;
+            border-radius: 15px;
+            font-size: 20px;
+            font-weight: bold;
+            cursor: pointer;
+            margin-top: 20px;
+            width: 100%;
+            transition: all 0.3s;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+        }
+        
+        .pre-game-content .play-button:active {
+            transform: scale(0.95);
+            background: white;
+        }
+        
         .game-over-content h2 {
             margin-bottom: 20px;
             color: #333;
@@ -284,6 +359,17 @@
         </div>
     </div>
     
+    <div class="pre-game-menu" id="preGameMenu">
+        <div class="pre-game-content">
+            <h1>🎮 Тетрис</h1>
+            <div class="record-display">
+                <div class="record-label">🏆 Ваш рекорд</div>
+                <div class="record-value" id="preGameBestScore">0</div>
+            </div>
+            <button class="play-button" onclick="startGameFromMenu()">▶️ Играть</button>
+        </div>
+    </div>
+    
     <div class="game-over" id="gameOver">
         <div class="game-over-content">
             <h2>Игра окончена!</h2>
@@ -299,27 +385,7 @@
         if (tg) {
             tg.ready();
             tg.expand();
-            
-            // Получаем рекорд из URL параметров (если есть)
-            const urlParams = new URLSearchParams(window.location.search);
-            const bestScoreParam = urlParams.get('bestScore');
-            if (bestScoreParam) {
-                bestScore = parseInt(bestScoreParam) || 0;
-                bestScoreEl.textContent = bestScore;
-            } else {
-                // Запрашиваем личный рекорд при загрузке
-                requestBestScore();
-            }
         }
-        
-        function requestBestScore() {
-            if (tg?.sendData) {
-                tg.sendData(JSON.stringify({
-                    action: 'get_best_score'
-                }));
-            }
-        }
-        
         
         const BOARD_WIDTH = 10;
         const BOARD_HEIGHT = 15;
@@ -658,6 +724,12 @@
         }
         
         function startGame() {
+            // Скрываем предигровое меню, если оно еще видно
+            const preGameMenu = document.getElementById('preGameMenu');
+            if (preGameMenu && !preGameMenu.classList.contains('hidden')) {
+                preGameMenu.classList.add('hidden');
+            }
+            
             gameBoard = Array(BOARD_HEIGHT).fill().map(() => Array(BOARD_WIDTH).fill(0));
             initNextPieces(); // Инициализируем очередь следующих фигур
             currentPiece = getNextPiece(); // Берем первую фигуру из очереди
@@ -742,9 +814,59 @@
             }
         });
         
+        // Функция для начала игры из меню
+        function startGameFromMenu() {
+            const preGameMenu = document.getElementById('preGameMenu');
+            if (preGameMenu) {
+                preGameMenu.classList.add('hidden');
+            }
+            startGame();
+        }
+        
+        // Функция для получения рекорда
+        function loadBestScore() {
+            const urlParams = new URLSearchParams(window.location.search);
+            const bestScoreParam = urlParams.get('bestScore');
+            
+            if (bestScoreParam) {
+                bestScore = parseInt(bestScoreParam) || 0;
+                bestScoreEl.textContent = bestScore;
+                document.getElementById('preGameBestScore').textContent = bestScore;
+            } else {
+                // Запрашиваем личный рекорд при загрузке
+                requestBestScore();
+            }
+        }
+        
+        // Обработка ответа от бота с рекордом
+        function handleBotMessage(messageText) {
+            try {
+                const data = JSON.parse(messageText);
+                if (data.type === 'best_score') {
+                    bestScore = data.score || 0;
+                    bestScoreEl.textContent = bestScore;
+                    document.getElementById('preGameBestScore').textContent = bestScore;
+                }
+            } catch (e) {
+                // Если не JSON, игнорируем
+            }
+        }
+        
+        // Настройка обработчика сообщений от бота
+        if (tg && tg.onEvent) {
+            tg.onEvent('message', (data) => {
+                if (data && data.text) {
+                    handleBotMessage(data.text);
+                }
+            });
+        }
+        
         // Initialize
         initBoard();
-        startGame();
+        loadBestScore();
+        
+        // Не начинаем игру сразу - показываем меню
+        // startGame() будет вызван при нажатии на кнопку "Играть"
     </script>
 </body>
 </html>
